@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Details</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="navbar-container"></div>
+
+    <div class="container">
+        <div id="product-details">
+            <p>Loading product...</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { supabase } from './js/supabaseClient.js';
+        import { setupNavbar } from './js/auth.js';
+        import { addToCart } from './js/cart.js';
+        
+        setupNavbar();
+
+        // Get the product ID from the URL (e.g., product.html?id=123)
+        const params = new URLSearchParams(window.location.search);
+        const productId = params.get('id');
+
+        const fetchProduct = async () => {
+            const container = document.getElementById('product-details');
+            if (!productId) {
+                container.innerHTML = '<p>No product ID provided.</p>';
+                return;
+            }
+
+            const { data: product, error } = await supabase
+                .from('products')
+                .select('*')
+                .eq('id', productId)
+                .single(); // Get a single record
+
+            if (error || !product) {
+                container.innerHTML = '<p>Product not found.</p>';
+            } else {
+                container.innerHTML = `
+                    <div style="display: flex; flex-wrap: wrap; gap: 2rem;">
+                        <img src="${product.image_url || 'https://via.placeholder.com/400'}" alt="${product.name}" style="max-width: 400px; border-radius: 8px;">
+                        <div>
+                            <h1>${product.name}</h1>
+                            <p style="font-size: 2rem; color: #333; margin: 1rem 0;">$${product.price}</p>
+                            <p>${product.description}</p>
+                            <button id="add-btn" class="btn btn-primary" style="margin-top: 2rem;">Add to Cart</button>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('add-btn').addEventListener('click', () => {
+                    addToCart(product);
+                    alert('Product added to cart!');
+                });
+            }
+        };
+
+        fetchProduct();
+    </script>
+</body>
+</html>
