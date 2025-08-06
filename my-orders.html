@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Orders</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="navbar-container"></div>
+    <div class="container">
+        <h1>My Orders</h1>
+        <div id="orders-container">
+            <p>Loading your orders...</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { supabase } from './js/supabaseClient.js';
+        import { setupNavbar } from './js/auth.js';
+
+        setupNavbar();
+
+        const displayOrders = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            const container = document.getElementById('orders-container');
+
+            if (!user) {
+                container.innerHTML = '<p>Please <a href="/login.html">login</a> to see your orders.</p>';
+                return;
+            }
+
+            const { data: orders, error } = await supabase
+                .from('orders')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                container.innerHTML = `<p>Error fetching orders: ${error.message}</p>`;
+                return;
+            }
+
+            if (orders.length === 0) {
+                container.innerHTML = '<p>You have not placed any orders yet.</p>';
+            } else {
+                let ordersHtml = orders.map(order => `
+                    <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 1rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                        <h3>Order placed on: ${new Date(order.created_at).toLocaleDateString()}</h3>
+                        <p>Total: $${order.total_price}</p>
+                        <p>Status: ${order.status}</p>
+                        <p>Deliver to: ${order.customer_details.name}, ${order.customer_details.address}</p>
+                    </div>
+                `).join('');
+                container.innerHTML = ordersHtml;
+            }
+        };
+
+        displayOrders();
+    </script>
+</body>
+</html>
