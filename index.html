@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Store Home</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="navbar-container"></div>
+
+    <div class="container">
+        <h1>Our Products</h1>
+        <div id="product-grid" class="product-grid">
+            <p>Loading products...</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { supabase } from './js/supabaseClient.js';
+        import { setupNavbar } from './js/auth.js';
+        import { addToCart } from './js/cart.js';
+
+        // Setup the navbar with auth state
+        setupNavbar();
+
+        // Fetch and display products
+        const fetchProducts = async () => {
+            const { data: products, error } = await supabase
+                .from('products')
+                .select('*');
+            
+            const grid = document.getElementById('product-grid');
+            if (error) {
+                grid.innerHTML = `<p>Error loading products: ${error.message}</p>`;
+                return;
+            }
+
+            if (products.length === 0) {
+                grid.innerHTML = '<p>No products found.</p>';
+                return;
+            }
+
+            // Clear the 'loading' message
+            grid.innerHTML = ''; 
+
+            products.forEach(product => {
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    <a href="/product.html?id=${product.id}">
+                        <img src="${product.image_url || 'https://via.placeholder.com/300'}" alt="${product.name}">
+                    </a>
+                    <div class="product-card-content">
+                        <h2>${product.name}</h2>
+                        <p class="price">$${product.price}</p>
+                        <button class="btn btn-primary add-to-cart-btn">Add to Cart</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+
+                // Add event listener to the button
+                card.querySelector('.add-to-cart-btn').addEventListener('click', () => {
+                    addToCart(product);
+                    alert(`${product.name} added to cart!`);
+                });
+            });
+        };
+
+        // Run the function when the page loads
+        fetchProducts();
+    </script>
+</body>
+</html>
