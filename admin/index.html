@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div id="navbar-container"></div>
+    <div class="container" id="admin-content">
+        <h1>Admin Dashboard</h1>
+        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+            <a href="/admin/add-product.html" class="btn btn-primary">Add New Product</a>
+            </div>
+    </div>
+
+    <script type="module">
+        import { supabase } from '../js/supabaseClient.js';
+        import { setupNavbar } from '../js/auth.js';
+
+        setupNavbar();
+
+        const checkAdmin = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                window.location.replace('/login.html'); // Not logged in
+                return;
+            }
+
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single();
+            
+            if (!profile || profile.role !== 'ADMIN') {
+                alert('Access Denied. You are not an admin.');
+                window.location.replace('/'); // Not an admin
+            }
+        };
+
+        checkAdmin();
+    </script>
+</body>
+</html>
